@@ -1,6 +1,7 @@
 package io.github.selchapp.android.location
 
 import io.github.selchapp.android.BaseView
+import io.github.selchapp.android.retrofit.model.GPRSPosition
 import io.github.selchapp.android.retrofit.model.User
 import org.osmdroid.views.MapController
 
@@ -9,7 +10,7 @@ import org.osmdroid.views.MapController
  */
 interface MapContract {
     interface View : BaseView<Presenter> {
-        fun showTeamMember(member: Collection<User>)
+        fun showTeamMember(member: User, position: GPRSPosition)
     }
 
 

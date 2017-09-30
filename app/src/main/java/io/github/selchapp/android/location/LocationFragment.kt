@@ -12,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.github.selchapp.android.R
+import io.github.selchapp.android.retrofit.model.GPRSPosition
 import io.github.selchapp.android.retrofit.model.User
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
@@ -27,11 +28,34 @@ import org.osmdroid.views.overlay.OverlayItem
  */
 class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consumer<Location> {
     val mapView: MapView by bindView(R.id.mapView)
+    lateinit var pres: MapContract.Presenter
+
+    override fun showTeamMember(member: User, position: GPRSPosition) {
+        addOverlay(member, position)
+    }
+
+    private fun addOverlay(member: User, position: GPRSPosition) {
+        val items = ArrayList<OverlayItem>()
+        items.add(OverlayItem(member.nickname, "", GeoPoint(position.latitude, position.longitude)))
+        //the overlay
+        val mOverlay = ItemizedOverlayWithFocus<OverlayItem>(activity, items,
+                object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
+                    override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean {
+                        //do something
+                        return true
+                    }
+
+                    override fun onItemLongPress(index: Int, item: OverlayItem): Boolean {
+                        return false
+                    }
+                })
+        mOverlay.setFocusItemsOnTap(true)
+        mapView.overlays.add(mOverlay)
+    }
 
     override fun accept(p0: Location) {
         val items = ArrayList<OverlayItem>()
         items.add(OverlayItem("Dein Standort", "Lolol", GeoPoint(p0.latitude, p0.longitude)))
-        mapView.overlays.clear()
         //the overlay
         val mOverlay = ItemizedOverlayWithFocus<OverlayItem>(activity, items,
                 object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
@@ -83,13 +107,9 @@ class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consum
         activity.bindService(Intent(activity, LocationService::class.java), this, Service.BIND_AUTO_CREATE)
     }
 
-    lateinit var pres: MapContract.Presenter
-
-    override fun showTeamMember(member: Collection<User>) {
-    }
-
     override fun setPresenter(presenter: MapContract.Presenter) {
         pres = presenter
+        pres.updateTeamMember(1)
     }
 
 }
