@@ -7,7 +7,7 @@ import io.github.selchapp.android.retrofit.model.User
 import retrofit2.Call
 import retrofit2.http.*
 
-interface XSService {
+interface SelchApiService {
     @GET("position/{userId}")
     fun getPosition(@Path("userId") userId: Int): Call<GPRSPosition>
 
@@ -20,7 +20,7 @@ interface XSService {
             : Call<Route>
 
     @GET("team/{teamId}")
-    fun getTeamMember(@Path("teamId") teamId: Int): Call<User>
+    fun getTeamMember(@Path("teamId") teamId: Int): Call<Collection<User>>
 
     @GET("user/nick/{userId}")
     fun getUser(@Path("userId") userId: Int): Call<User>
