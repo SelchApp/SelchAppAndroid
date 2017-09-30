@@ -1,4 +1,4 @@
-package com.movisens.xs.api
+package io.github.selchapp.android.retrofit
 
 
 import io.github.selchapp.android.retrofit.model.GPRSPosition
@@ -11,18 +11,16 @@ interface SelchApiService {
     @GET("position/{userId}")
     fun getPosition(@Path("userId") userId: Int): Call<GPRSPosition>
 
-    @PUT("position/self/{userId}/{gprsPosition}")
-    fun putPosition(@Path("userId") userId: Int, @Path("gprsPosition") gprsPosition: GPRSPosition)
-            : Call<GPRSPosition>
+    @PUT("position/self/{gprsPosition}")
+    fun putPosition(@Path("gprsPosition") gprsPosition: GPRSPosition): Call<GPRSPosition>
 
     @GET("route/user/{userId}/{gprsPosition}")
-    fun getRoute(@Path("userId") userId: Int, @Path("gprsPosition") gprsPosition: GPRSPosition)
-            : Call<Route>
+    fun getRoute(@Path("userId") userId: Int, @Path("gprsPosition") gprsPosition: GPRSPosition): Call<Route>
 
     @GET("team/{teamId}")
     fun getTeamMember(@Path("teamId") teamId: Int): Call<Collection<User>>
 
-    @GET("user/nick/{userId}")
+    @GET("user/{userId}")
     fun getUser(@Path("userId") userId: Int): Call<User>
 
 }

@@ -1,6 +1,6 @@
 package io.github.selchapp.android.location
 
-import com.movisens.xs.api.SelchApiService
+import io.github.selchapp.android.retrofit.SelchApiService
 import io.github.selchapp.android.BasePresenter
 import io.github.selchapp.android.retrofit.model.User
 import retrofit2.Call
