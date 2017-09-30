@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package io.github.selchapp.android;
+package io.github.selchapp.android
 
-public interface BasePresenter {
+interface BaseView<T> {
 
-    void start();
+    fun setPresenter(presenter: T)
 
 }
