@@ -3,15 +3,13 @@ package io.github.selchapp.android.location
 import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
-import android.os.Bundle
+import android.location.Location
+import android.os.Binder
 import android.os.IBinder
-import android.util.Log
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.tasks.OnCompleteListener
+import android.os.Looper
+import com.google.android.gms.location.*
+import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.Subject
 
 
 /**
@@ -22,22 +20,28 @@ class LocationService : Service() {
     private val COMMAND = "COMMAND"
     private val TAG = LocationService::class.java.simpleName
     private var mFusedLocationClient: FusedLocationProviderClient? = null
+    val subject: BehaviorSubject<Location> = BehaviorSubject.create()
 
 
     override fun onBind(intent: Intent): IBinder? {
-        return null
-    }
-
-    override fun onCreate() {
-        mFusedLocationClient = FusedLocationProviderClient(applicationContext)
-        super.onCreate()
+        return LocalBinder(subject)
     }
 
     @SuppressLint("MissingPermission")
+    override fun onCreate() {
+        mFusedLocationClient = FusedLocationProviderClient(applicationContext)
+        val request = LocationRequest()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(10000)
+                .setFastestInterval(10000)
+                .setSmallestDisplacement(0f)
+        mFusedLocationClient!!.requestLocationUpdates(request
+                , CustomLocationCallback(subject), Looper.myLooper())
+        super.onCreate()
+    }
+
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        mFusedLocationClient!!.lastLocation.addOnCompleteListener({
-            Log.e(TAG, it.result.toString())
-        })
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -45,5 +49,23 @@ class LocationService : Service() {
         super.onDestroy()
     }
 
+    class LocalBinder(val subject: Subject<Location>) : Binder() {
+        fun getLocationSubject(): Subject<Location> {
+            return subject
+        }
+    }
+
+    class CustomLocationCallback(val subject: BehaviorSubject<Location>) : LocationCallback() {
+
+
+        override fun onLocationResult(p0: LocationResult) {
+            super.onLocationResult(p0)
+            subject.onNext(p0.lastLocation)
+        }
+
+        override fun onLocationAvailability(p0: LocationAvailability?) {
+            super.onLocationAvailability(p0)
+        }
+    }
 
 }
