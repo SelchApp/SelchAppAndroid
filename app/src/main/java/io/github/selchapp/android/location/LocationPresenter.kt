@@ -31,12 +31,7 @@ class LocationPresenter(val view: MapContract.View) : MapContract.Presenter {
             }
 
             override fun onResponse(call: Call<Route>?, response: Response<Route>?) {
-                for (step in response?.body()!!.steps) {
-                    for (gprsPosition in step.paths) {
-                        Log.e("Test", "${gprsPosition.lat} ${gprsPosition.lng}")
-                    }
-                }
-//                view.renderRoute(response?.body()!!);
+                view.renderRoute(response?.body()!!);
             }
 
         })

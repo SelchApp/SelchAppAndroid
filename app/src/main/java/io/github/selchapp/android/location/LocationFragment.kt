@@ -1,10 +1,13 @@
 package io.github.selchapp.android.location
 
+import android.annotation.SuppressLint
 import android.app.Fragment
+import android.app.PendingIntent
 import android.app.Service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
@@ -26,13 +29,48 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.ItemizedOverlayWithFocus
 import org.osmdroid.views.overlay.OverlayItem
+import android.widget.Toast
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.GeofencingRequest
+import com.google.android.gms.location.LocationServices
+import io.github.selchapp.android.retrofit.model.Step
+import org.osmdroid.views.overlay.Polyline
+
 
 /**
  * Created by rzetzsche on 30.09.17.
  */
 class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, SpeechRecognitionService.RecognizeListener {
+    var i: Int = 0
     override fun renderRoute(route: Route) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        for (step in route.steps) {
+            setGeofence(step)
+            val line = Polyline()
+            if (step.type == "piste") line.color = Color.BLACK
+            else line.color = Color.BLUE
+
+            line.points = step.getGeoPoints()
+            line.setOnClickListener { polyline, mapView, eventPos ->
+                Toast.makeText(mapView.context, "polyline with " + polyline.points.size + "pts was tapped", Toast.LENGTH_LONG).show()
+                false
+            }
+            mapView.getOverlayManager().add(line)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun setGeofence(step: Step) {
+        val point = step.path.first()
+        val request = GeofencingRequest.Builder()
+                .addGeofence(Geofence.Builder()
+                        .setCircularRegion(point.lat, point.lng, 50f)
+                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                        .build())
+        val intent = Intent(activity, TextToSpeechService::class.java)
+        intent.putExtra("TEXT", step.instructions)
+        geoFenceClient.addGeofences(request.build()
+                , PendingIntent.getService(activity, i++, intent, PendingIntent.FLAG_UPDATE_CURRENT));
     }
 
     override fun wasRecognized() {
@@ -45,6 +83,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     val mapView: MapView by bindView(R.id.mapView)
     var lastLoc: GPRSPosition? = null
     lateinit var pres: MapContract.Presenter
+    lateinit var geoFenceClient: GeofencingClient
 
     val locationConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -115,6 +154,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = LayoutInflater.from(activity).inflate(R.layout.fragment_map, null)
+        geoFenceClient = LocationServices.getGeofencingClient(activity)
         return view
     }
 
@@ -145,7 +185,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.title == "Mic")
-            pres.getRoute(2, lastLoc!!)
+            pres.getRoute(4, GPRSPosition(47.480173, 12.192431))
 
         //    activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
         return super.onOptionsItemSelected(item)
