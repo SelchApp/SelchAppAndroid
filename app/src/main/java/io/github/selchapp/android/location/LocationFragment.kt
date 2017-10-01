@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import io.github.selchapp.android.R
 import io.github.selchapp.android.retrofit.model.GPRSPosition
+import io.github.selchapp.android.retrofit.model.Route
 import io.github.selchapp.android.retrofit.model.User
 import io.github.selchapp.android.voice.SpeechRecognitionService
 import io.github.selchapp.android.voice.TextToSpeechService
@@ -30,13 +31,19 @@ import org.osmdroid.views.overlay.OverlayItem
  * Created by rzetzsche on 30.09.17.
  */
 class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, SpeechRecognitionService.RecognizeListener {
+    override fun renderRoute(route: Route) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun wasRecognized() {
         val intent = Intent(activity, TextToSpeechService::class.java)
-        intent.putExtra("TEXT", "Flatsch Flatsch Flatsch und dann kommt die Soße richtig raus")
+        // intent.putExtra("TEXT", "Und dann bin ich der Assoziale? Die sind die Assozialen")
         startService(intent)
+        pres.getRoute(2, lastLoc!!)
     }
 
     val mapView: MapView by bindView(R.id.mapView)
+    var lastLoc: GPRSPosition? = null
     lateinit var pres: MapContract.Presenter
 
     val locationConnection: ServiceConnection = object : ServiceConnection {
@@ -64,8 +71,9 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     private fun addOverlay(member: User, position: GPRSPosition) {
+        lastLoc = position
         val items = ArrayList<OverlayItem>()
-        items.add(OverlayItem(member.nickname, "", GeoPoint(position.latitude, position.longitude)))
+        items.add(OverlayItem(member.nickname, "", GeoPoint(position.lat, position.lng)))
         //the overlay
         val mOverlay = ItemizedOverlayWithFocus<OverlayItem>(activity, items,
                 object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
@@ -83,6 +91,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     override fun accept(p0: Location) {
+
         val items = ArrayList<OverlayItem>()
         items.add(OverlayItem("Dein Standort", "Lolol", GeoPoint(p0.latitude, p0.longitude)))
         //the overlay
@@ -136,7 +145,9 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.title == "Mic")
-            activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
+            pres.getRoute(2, lastLoc!!)
+
+        //    activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
         return super.onOptionsItemSelected(item)
     }
 

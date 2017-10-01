@@ -16,8 +16,8 @@ interface SelchApiService {
     @PUT("position/self/{gprsPosition}")
     fun putPosition(@Path("gprsPosition") gprsPosition: GPRSPosition): Call<GPRSPosition>
 
-    @GET("route/user/{userId}/{gprsPosition}")
-    fun getRoute(@Path("userId") userId: Int, @Path("gprsPosition") gprsPosition: GPRSPosition): Call<Route>
+    @POST("route/touser/{userId}")
+    fun getRoute(@Path("userId") userId: Int, @Body gprsPosition: GPRSPosition): Call<Route>
 
     @GET("team/{teamId}")
     fun getTeam(@Path("teamId") teamId: Int): Observable<Team>

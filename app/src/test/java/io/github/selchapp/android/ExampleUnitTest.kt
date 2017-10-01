@@ -68,4 +68,20 @@ class ExampleUnitTest {
 //
 //        assertNotNull(result)
     }
+
+    @Test
+    fun testRoute() {
+        val client = OkHttpClient.Builder()
+                .addInterceptor(BasiAuthInterceptor("test", "test"))
+                .build()
+        val retrofit = Retrofit.Builder()
+                .client(client)
+                .baseUrl("http://10.1.228.148:15234")
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .build()
+
+        val service = retrofit.create<SelchApiService>(SelchApiService::class.java)
+        print(service.getRoute(1, GPRSPosition(0.0, 0.0)).execute().body().toString())
+    }
 }
