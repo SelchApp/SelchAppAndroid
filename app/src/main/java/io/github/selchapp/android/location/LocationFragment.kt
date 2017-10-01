@@ -59,6 +59,8 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
         }
     }
 
+    var mOverlay: ItemizedOverlayWithFocus<OverlayItem>? = null
+
     @SuppressLint("MissingPermission")
     private fun setGeofence(step: Step) {
         val point = step.path.first()
@@ -74,9 +76,6 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     override fun wasRecognized() {
-        val intent = Intent(activity, TextToSpeechService::class.java)
-        // intent.putExtra("TEXT", "Und dann bin ich der Assoziale? Die sind die Assozialen")
-        startService(intent)
         pres.getRoute(2, lastLoc!!)
     }
 
@@ -130,11 +129,13 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     override fun accept(p0: Location) {
-
         val items = ArrayList<OverlayItem>()
         items.add(OverlayItem("Dein Standort", "Lolol", GeoPoint(p0.latitude, p0.longitude)))
         //the overlay
-        val mOverlay = ItemizedOverlayWithFocus<OverlayItem>(activity, items,
+        if (mOverlay != null) {
+            mapView.overlays.remove(mOverlay)
+        }
+        mOverlay = ItemizedOverlayWithFocus<OverlayItem>(activity, items,
                 object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
                     override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean {
                         //do something
@@ -145,7 +146,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
                         return false
                     }
                 })
-        mOverlay.setFocusItemsOnTap(true)
+        mOverlay!!.setFocusItemsOnTap(true)
         mapView.overlays.add(mOverlay)
     }
 

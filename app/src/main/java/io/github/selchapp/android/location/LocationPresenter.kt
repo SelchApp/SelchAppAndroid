@@ -50,7 +50,7 @@ class LocationPresenter(val view: MapContract.View) : MapContract.Presenter {
                 .build()
         val retrofit = Retrofit.Builder()
                 .client(client)
-                .baseUrl("http://10.1.228.148:15234")
+                .baseUrl("http://guidopolis.soapman.de:8080")
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build()

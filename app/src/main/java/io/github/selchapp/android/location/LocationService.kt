@@ -49,9 +49,13 @@ class LocationService : Service() {
         super.onDestroy()
     }
 
-    class LocalBinder(val subject: Subject<Location>) : Binder() {
+    inner class LocalBinder(val subject: Subject<Location>) : Binder() {
         fun getLocationSubject(): Subject<Location> {
             return subject
+        }
+
+        fun getApiClient(): FusedLocationProviderClient? {
+            return this@LocationService.mFusedLocationClient
         }
     }
 
