@@ -2,6 +2,7 @@ package io.github.selchapp.android.voice
 
 import android.app.Service
 import android.content.Intent
+import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
 import android.speech.RecognitionListener
@@ -14,6 +15,17 @@ import android.util.Log
  * Created by rzetzsche on 01.10.17.
  */
 class SpeechRecognitionService : Service(), RecognitionListener {
+    var listener: RecognizeListener? = null
+
+    interface RecognizeListener {
+        fun wasRecognized()
+    }
+
+    inner class LocalBinder : Binder() {
+        fun setListener(listener: RecognizeListener) {
+            this@SpeechRecognitionService.listener = listener
+        }
+    }
 
     private lateinit var speechRecognizer: SpeechRecognizer
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -30,7 +42,7 @@ class SpeechRecognitionService : Service(), RecognitionListener {
     }
 
     override fun onBind(p0: Intent?): IBinder {
-        TODO()
+        return LocalBinder()
     }
 
     override fun onReadyForSpeech(p0: Bundle?) {
@@ -58,13 +70,12 @@ class SpeechRecognitionService : Service(), RecognitionListener {
     }
 
     override fun onResults(bundle: Bundle) {
-        var str = String()
         val data: ArrayList<String> = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         for (i in 0..data.size - 1) {
             Log.d("lol", "result " + data[i])
         }
-        val intent = Intent(applicationContext, TextToSpeechService::class.java)
-        intent.putExtra("TEXT", "Und dann kommt dir der Mock hoch")
-        startService(intent)
+        if (listener != null) {
+            listener!!.wasRecognized()
+        }
     }
 }

@@ -9,11 +9,14 @@ import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import io.github.selchapp.android.R
 import io.github.selchapp.android.retrofit.model.GPRSPosition
 import io.github.selchapp.android.retrofit.model.User
+import io.github.selchapp.android.voice.SpeechRecognitionService
+import io.github.selchapp.android.voice.TextToSpeechService
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import kotterknife.bindView
@@ -26,9 +29,35 @@ import org.osmdroid.views.overlay.OverlayItem
 /**
  * Created by rzetzsche on 30.09.17.
  */
-class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consumer<Location> {
+class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, SpeechRecognitionService.RecognizeListener {
+    override fun wasRecognized() {
+        val intent = Intent(activity, TextToSpeechService::class.java)
+        intent.putExtra("TEXT", "Flatsch Flatsch Flatsch und dann kommt die Soße richtig raus")
+        startService(intent)
+    }
+
     val mapView: MapView by bindView(R.id.mapView)
     lateinit var pres: MapContract.Presenter
+
+    val locationConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceDisconnected(p0: ComponentName?) {
+        }
+
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as LocationService.LocalBinder
+            subscription = binder.getLocationSubject().subscribe(this@LocationFragment)
+        }
+    }
+
+    val speechConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceDisconnected(p0: ComponentName?) {
+        }
+
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as SpeechRecognitionService.LocalBinder
+            binder.setListener(this@LocationFragment)
+        }
+    }
 
     override fun showTeamMember(member: User, position: GPRSPosition) {
         addOverlay(member, position)
@@ -72,15 +101,8 @@ class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consum
         mapView.overlays.add(mOverlay)
     }
 
-    override fun onServiceDisconnected(p0: ComponentName?) {
-    }
-
     private lateinit var subscription: Disposable
 
-    override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-        val binder = p1 as LocationService.LocalBinder
-        subscription = binder.getLocationSubject().subscribe(this)
-    }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = LayoutInflater.from(activity).inflate(R.layout.fragment_map, null)
@@ -98,13 +120,13 @@ class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consum
 
     override fun onPause() {
         super.onPause()
-        activity.unbindService(this)
+        activity.unbindService(locationConnection)
         subscription.dispose()
     }
 
     override fun onResume() {
         super.onResume()
-        activity.bindService(Intent(activity, LocationService::class.java), this, Service.BIND_AUTO_CREATE)
+        activity.bindService(Intent(activity, LocationService::class.java), locationConnection, Service.BIND_AUTO_CREATE)
     }
 
     override fun setPresenter(presenter: MapContract.Presenter) {
@@ -112,4 +134,13 @@ class LocationFragment : Fragment(), MapContract.View, ServiceConnection, Consum
         pres.updateTeamMember(1)
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.title == "Mic")
+            activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
+        return super.onOptionsItemSelected(item)
+    }
+
+    fun Fragment.startService(intent: Intent) {
+        activity.startService(intent)
+    }
 }
