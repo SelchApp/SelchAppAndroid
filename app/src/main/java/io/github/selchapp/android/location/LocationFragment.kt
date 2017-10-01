@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -64,9 +65,12 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     @SuppressLint("MissingPermission")
     private fun setGeofence(step: Step) {
         val point = step.path.first()
+        Log.e("TEST", "${point.lat} ${point.lng}")
         val request = GeofencingRequest.Builder()
                 .addGeofence(Geofence.Builder()
-                        .setCircularRegion(point.lat, point.lng, 50f)
+                        .setCircularRegion(point.lat, point.lng, 10f)
+                        .setRequestId(i++.toString())
+                        .setExpirationDuration(Geofence.NEVER_EXPIRE)
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                         .build())
         val intent = Intent(activity, TextToSpeechService::class.java)
@@ -76,7 +80,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     override fun wasRecognized() {
-        pres.getRoute(2, lastLoc!!)
+        pres.getRoute(4, GPRSPosition(47.480173, 12.192431))
     }
 
     val mapView: MapView by bindView(R.id.mapView)
@@ -188,7 +192,7 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
         if (item.title == "Mic")
             pres.getRoute(4, GPRSPosition(47.480173, 12.192431))
 
-        //    activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
+//        activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
         return super.onOptionsItemSelected(item)
     }
 
