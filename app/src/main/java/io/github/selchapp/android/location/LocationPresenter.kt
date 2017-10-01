@@ -6,16 +6,12 @@ import io.github.selchapp.android.retrofit.SelchApiService
 import io.github.selchapp.android.BasePresenter
 import io.github.selchapp.android.retrofit.BasiAuthInterceptor
 import io.github.selchapp.android.retrofit.model.GPRSPosition
-import io.github.selchapp.android.retrofit.model.Team
 import io.github.selchapp.android.retrofit.model.User
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
