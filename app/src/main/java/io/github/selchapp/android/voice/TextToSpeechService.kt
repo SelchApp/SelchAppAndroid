@@ -12,17 +12,27 @@ import android.speech.tts.TextToSpeech
  */
 class TextToSpeechService : IntentService("TTS"), TextToSpeech.OnInitListener {
     var isReady: Boolean = false
+    var text: String = ""
     override fun onHandleIntent(intent: Intent) {
-        val text: CharSequence? = intent.extras?.getCharSequence("TEXT")
+        val text: CharSequence? = intent.getStringExtra("TEXT")
         if (text != null)
             if (isReady)
-                tts.speak(text, TextToSpeech.QUEUE_FLUSH
-                        , null, System.currentTimeMillis().toString())
+                speak(text)
+            else this.text = text.toString()
+    }
+
+    private fun speak(text: CharSequence?) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH
+                , null, System.currentTimeMillis().toString())
     }
 
     lateinit var tts: TextToSpeech
     override fun onInit(status: Int) {
         isReady = true;
+        if (!text.isEmpty()) {
+            speak(text)
+            text = ""
+        }
     }
 
     override fun onCreate() {

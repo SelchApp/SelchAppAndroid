@@ -3,4 +3,5 @@
     android:id="@+id/fragmentMap"
     class="io.github.selchapp.android.location.LocationFragment"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent"
+    />
