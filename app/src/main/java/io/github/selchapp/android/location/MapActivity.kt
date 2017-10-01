@@ -1,8 +1,10 @@
 package io.github.selchapp.android.location
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import io.github.selchapp.android.R
+import io.github.selchapp.android.voice.TextToSpeechService
 
 
 /**
@@ -15,5 +17,6 @@ class MapActivity : Activity() {
         val fragment = fragmentManager
                 .findFragmentById(R.id.fragmentMap) as LocationFragment
         val presenter = LocationPresenter(fragment)
+        startService(Intent(applicationContext, TextToSpeechService::class.java))
     }
 }
