@@ -1,6 +1,7 @@
 package io.github.selchapp.android.location
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Fragment
 import android.app.PendingIntent
 import android.app.Service
@@ -11,6 +12,7 @@ import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
+import android.speech.RecognizerIntent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -37,14 +39,26 @@ import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import io.github.selchapp.android.retrofit.model.Step
 import org.osmdroid.views.overlay.Polyline
+import java.util.regex.Pattern
 
 
 /**
  * Created by rzetzsche on 30.09.17.
  */
 class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, SpeechRecognitionService.RecognizeListener {
+    var mOverlay: ItemizedOverlayWithFocus<OverlayItem>? = null
+    val mapView: MapView by bindView(R.id.mapView)
+    var lastLoc: GPRSPosition? = null
+    var lines: ArrayList<Polyline> = ArrayList()
+    lateinit var pres: MapContract.Presenter
+    lateinit var geoFenceClient: GeofencingClient
+    val regex = "bring me to (robert|valentin|stephan)"
+    private lateinit var subscription: Disposable
+
     var i: Int = 0
     override fun renderRoute(route: Route) {
+        mapView.overlayManager.removeAll(lines)
+        lines.clear()
         for (step in route.steps) {
             setGeofence(step)
             val line = Polyline()
@@ -53,14 +67,14 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
 
             line.points = step.getGeoPoints()
             line.setOnClickListener { polyline, mapView, eventPos ->
-                Toast.makeText(mapView.context, "polyline with " + polyline.points.size + "pts was tapped", Toast.LENGTH_LONG).show()
+                Toast.makeText(mapView.context, step.instructions, Toast.LENGTH_LONG).show()
                 false
             }
-            mapView.getOverlayManager().add(line)
+            lines.add(line)
+            mapView.overlayManager.add(line)
+            mapView.invalidate()
         }
     }
-
-    var mOverlay: ItemizedOverlayWithFocus<OverlayItem>? = null
 
     @SuppressLint("MissingPermission")
     private fun setGeofence(step: Step) {
@@ -83,10 +97,6 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
         pres.getRoute(4, GPRSPosition(47.480173, 12.192431))
     }
 
-    val mapView: MapView by bindView(R.id.mapView)
-    var lastLoc: GPRSPosition? = null
-    lateinit var pres: MapContract.Presenter
-    lateinit var geoFenceClient: GeofencingClient
 
     val locationConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -113,7 +123,6 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
     }
 
     private fun addOverlay(member: User, position: GPRSPosition) {
-        lastLoc = position
         val items = ArrayList<OverlayItem>()
         items.add(OverlayItem(member.nickname, "", GeoPoint(position.lat, position.lng)))
         //the overlay
@@ -130,9 +139,11 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
                 })
         mOverlay.setFocusItemsOnTap(true)
         mapView.overlays.add(mOverlay)
+        mapView.invalidate()
     }
 
     override fun accept(p0: Location) {
+        lastLoc = GPRSPosition(p0.latitude, p0.longitude)
         val items = ArrayList<OverlayItem>()
         items.add(OverlayItem("Dein Standort", "Lolol", GeoPoint(p0.latitude, p0.longitude)))
         //the overlay
@@ -152,10 +163,8 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
                 })
         mOverlay!!.setFocusItemsOnTap(true)
         mapView.overlays.add(mOverlay)
+        mapView.invalidate()
     }
-
-    private lateinit var subscription: Disposable
-
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = LayoutInflater.from(activity).inflate(R.layout.fragment_map, null)
@@ -167,8 +176,8 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
         super.onStart()
         mapView.setMultiTouchControls(true)
         val mapController = mapView.controller
-        mapController.setZoom(9)
-        val startPoint = GeoPoint(47.5617131, 12.2931463)
+        mapController.setZoom(15)
+        val startPoint = GeoPoint(47.480167, 12.192419)
         mapController.setCenter(startPoint)
     }
 
@@ -188,11 +197,45 @@ class LocationFragment : Fragment(), MapContract.View, Consumer<Location>, Speec
         pres.updateTeamMember(1)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.title == "Mic")
-            pres.getRoute(4, GPRSPosition(47.480173, 12.192431))
+    fun listenToSpeech() {
+        val listenIntent =
+                Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        listenIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
+                javaClass.getPackage().getName());
+        listenIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a word!");
+        listenIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        listenIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10);
+        startActivityForResult(listenIntent, 1234);
+    }
 
-//        activity.bindService(Intent(activity, SpeechRecognitionService::class.java), speechConnection, Service.BIND_AUTO_CREATE)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        //check speech recognition result
+        if (requestCode == 1234 && resultCode == Activity.RESULT_OK) {
+            val words = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            for (word in words) {
+                if (regex.toRegex().matches(word.toLowerCase())) {
+                    pres.getRoute(getIdFor(word.toLowerCase().removePrefix("bring me to "))
+                            , GPRSPosition(lastLoc!!.lat, lastLoc!!.lng))
+                }
+            }
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun getIdFor(removePrefix: String): Int {
+        if (removePrefix == "robert") {
+            return 3
+        } else if (removePrefix == "stephan") {
+            return 2
+        } else if (removePrefix == "valentin") {
+            return 4
+        } else
+            return 4
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        listenToSpeech()
         return super.onOptionsItemSelected(item)
     }
 

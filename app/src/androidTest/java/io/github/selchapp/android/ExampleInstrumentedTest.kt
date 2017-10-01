@@ -7,6 +7,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 import org.junit.Assert.*
+import io.github.selchapp.android.location.LocationService
+
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -20,5 +22,8 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getTargetContext()
         assertEquals("io.github.selchapp.android", appContext.packageName)
+
     }
+
+
 }

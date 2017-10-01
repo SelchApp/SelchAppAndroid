@@ -1,10 +1,9 @@
 package io.github.selchapp.android.voice
 
 import android.app.IntentService
-import android.app.Service
 import android.content.Intent
-import android.os.IBinder
 import android.speech.tts.TextToSpeech
+import java.util.*
 
 
 /**
@@ -28,6 +27,7 @@ class TextToSpeechService : IntentService("TTS"), TextToSpeech.OnInitListener {
 
     lateinit var tts: TextToSpeech
     override fun onInit(status: Int) {
+        tts.setLanguage(Locale.US)
         isReady = true;
         if (!text.isEmpty()) {
             speak(text)
